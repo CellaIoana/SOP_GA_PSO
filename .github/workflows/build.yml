@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Smoke test (imports)
+        run: |
+          python - << 'PY'
+          import sys
+          import matplotlib
+          print("matplotlib:", matplotlib.__version__)
+          try:
+              import networkx as nx
+              print("networkx:", nx.__version__)
+          except Exception as e:
+              print("networkx not used:", e)
+          print("SMOKE OK")
+          PY
+- name: Smoke test (imports)
+        run: |
+          python - << 'PY'
+          import sys
+          import matplotlib
+          print("matplotlib:", matplotlib.__version__)
+          try:
+              import networkx as nx
+              print("networkx:", nx.__version__)
+          except Exception as e:
+              print("networkx not used:", e)
+      - name: Smoke test (imports)
+run: |
+python - << 'PY'
+import sys
+import matplotlib
+print("matplotlib:", matplotlib._version_) 
+try:
+import networkx as nx
+print("networkx:", nx._version_)
+except Exception as e:
+print("networkx not used:", e)
+print("SMOKE OK")
+PY
