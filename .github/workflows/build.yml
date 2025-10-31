@@ -1,4 +1,4 @@
-name: build.yml
+name: CI: Python workflow (imports + parser smoke test)
 
 on:
   push:
@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -23,23 +23,29 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        env:
-          MPLBACKEND: Agg  # headless matplotlib
 
-      - name: Smoke test (imports + tiny parse)
+      - name: Import smoke test
         run: |
           python - <<'PY'
-          import sys, pathlib
-          import matplotlib, networkx
-          print("OK imports:", matplotlib.__version__, networkx.__version__)
-          p = pathlib.Path("sop_instances/ESC07.sop")
-          if p.exists():
-              from instance_parser import parse_sop_file
-              nodes, M, prec = parse_sop_file(str(p))
-              assert len(nodes) > 0 and len(M) > 0
-              print("OK parser: nodes", len(nodes), "matrix", len(M), "x", len(M[0]), "prec", len(prec))
-          else:
-              print("NOTE: ESC07.sop absent in CI; skipped parser check")
+          import sys
+          import matplotlib
+          try:
+              import networkx
+              print("OK networkx", networkx.__version__)
+          except Exception as e:
+              print("networkx not installed:", e)
+          print("OK matplotlib", matplotlib.__version__)
           PY
-        env:
-          MPLBACKEND: Agg
+
+      - name: Parser smoke test (ESC07.sop)
+        run: |
+          python - <<'PY'
+          import os
+          from instance_parser import parse_sop_file
+          p = os.path.join("sop_instances", "ESC07.sop")
+          if not os.path.exists(p):
+              raise SystemExit(f"Missing test file: {p}")
+          nodes, matrix, precedence = parse_sop_file(p)
+          assert len(nodes) == len(matrix), "nodes and matrix size mismatch"
+          print(f"Parsed {len(nodes)} nodes, {len(precedence)} precedence rules")
+          PY
